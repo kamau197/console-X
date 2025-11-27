@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Contract Draft — Create Contract</title>
+<style>
+:root{
+  --pink:#FFC1CC;--lav:#E6E6FA;--mint:#AAF0D1;--sky:#87CEEB;
+  --card:#ffffffcc;--ink:#1f2937;--muted:#6b7280;--shadow:0 8px 24px rgba(31,41,55,0.12);
+}
+*{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,Arial}
+body{margin:0;background:linear-gradient(180deg,var(--pink)0%,var(--lav)50%,var(--sky)100%);
+  color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.container{width:100%;max-width:1100px}
+.panel{background:var(--card);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.grid{display:grid;grid-template-columns:1fr 380px;gap:18px}
+form{display:flex;flex-direction:column;gap:12px}
+input,textarea,select{background:white;border:1px solid var(--lav);padding:10px;border-radius:8px;width:100%;color:var(--ink)}
+.row{display:flex;gap:10px}.row>*{flex:1}
+.milestones{background:var(--lav);padding:10px;border-radius:8px}
+.ms-item{display:grid;grid-template-columns:1fr 150px 80px;gap:8px;align-items:center;padding:8px;margin-bottom:8px;border-radius:8px;border:1px dashed var(--sky);background:white}
+.ms-item.locked{border:1px solid var(--sky);background:#f0f4f8}
+.btn{border:0;padding:8px 10px;border-radius:8px;cursor:pointer}
+.btn.ghost{background:transparent;border:1px solid var(--sky)}
+.preview{background:linear-gradient(180deg,var(--mint)30%,transparent);padding:12px;border-radius:10px;display:flex;flex-direction:column;gap:8px}
+.contract{background:white;padding:16px;border-radius:8px;border:1px solid var(--lav);min-height:320px;overflow:auto;box-shadow:var(--shadow)}
+.small{font-size:12px;color:var(--muted)}
+hr{border:0;border-top:1px solid #e0e0e0;margin:8px 0}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Create Contract Draft</h1>
+<div class="panel">
+<div class="grid">
+<div>
+<form id="contractForm">
+<label>Disclaimer</label>
+<textarea id="disclaimer"readonly>This contract is a draft for mutual agreement. It does not constitute legal advice. Both parties should seek independent legal counsel before final execution. In the event of an appeal this contract can only be issued by the Console X legal team</textarea>
+
+<div class="row">
+  <div><label>Party A (Name)</label><input id="partyA" type="text" required /></div>
+  <div><label>Party B (Name)</label><input id="partyB" type="text" required /></div>
+</div>
+<div class="row">
+  <div><label>Party A User ID</label><input id="userId" type="text" /></div>
+  <div><label>Party B User ID</label><input id="partyBId" type="text" required /></div>
+</div>
+<div class="row">
+  <div><label>Start Date</label><input id="startDate" type="date" /></div>
+  <div><label>End Date</label><input id="endDate" type="date" /></div>
+</div>
+
+<h3>Rates</h3>
+<div class="row">
+  <div><label>Publishing Fee</label><input id="publishingFee" type="number" min="0" step="0.01" /></div>
+  <div><label>Rental Fee</label><input id="rentalFee" type="number" min="0" step="0.01" /></div>
+</div>
+<div>
+  <label>Rental Commission (%)</label>
+  <input id="rentalCommission" type="number" min="0" step="0.01" />
+  <div class="small">This is the percentage of revenue paid for rent.</div>
+</div>
+<label>comment</label>
+<textarea id="comment">Add any term of agreement you may have come to...</textarea>
+
+<label>Upfront Payment Required (amount)</label>
+<input id="upfrontAmount" type="number" min="0" value="0" readonly />
+
+<label>Contract Type</label>
+<select id="contractType">
+  <option value="">-- Select type --</option>
+  <option value="GA">GA Type (Grant Access)</option>
+  <option value="SA">SA (Send APK)</option>
+  <option value="TA">TA (Transfer Asset)</option>
+</select>
+
+<div style="margin-top:10px">
+  <label>Revenue releases</label>
+  <div style="display:flex;gap:12px;margin-top:6px">
+    <label><input type="checkbox" id="escrowAccount" /> Escrow Account</label>
+    <label><input type="checkbox" id="escrowLedger" /> Escrow Ledger</label>
+  </div>
+  <div class="small">Only one revenue release type can be selected at a time.</div>
+</div>
+
+<label style="margin-top:8px">Milestones</label>
+<div class="milestones" id="milestoneList"></div>
+
+<div style="display:flex;gap:8px;margin-top:8px">
+  <button type="button" class="btn" id="addMilestone">Add Milestone</button>
+  <button type="button" class="btn ghost" id="clearMilestones">Clear</button>
+</div>
+
+<div class="footer-actions">
+  <button type="button" class="btn" id="finalizeBtn">Finalize Contract</button>
+</div>
+</form>
+</div>
+
+<div>
+<div class="preview">
+<div style="display:flex;justify-content:space-between;align-items:center">
+  <strong>Live Contract Preview</strong>
+  <button class="btn ghost" id="downloadPreview">Download Preview</button>
+</div>
+<div class="contract" id="contractPreview">
+  <div id="previewContent">No contract data yet. Fill the form on the left.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<script src="../js/createContract.js"></script>
+
+</body>
+</html>

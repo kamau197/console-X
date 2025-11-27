@@ -1,0 +1,482 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ConsoleX — Admin Dashboard (PRO)</title>
+
+<!-- jsPDF from CDN for Export to PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+  /* Base (kept from original) */
+  body{font-family:'Poppins',sans-serif;margin:0;background:#f9fafc;color:#1f2937;}
+  header{background:#fff;padding:1rem 1.25rem;display:flex;gap:12px;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,0.08);position:sticky;top:0;z-index:120;}
+  .logo{display:flex;align-items:center;gap:12px;}
+  .logo-text{font-size:22px;font-weight:700;}
+  .logo-text span{background:linear-gradient(135deg,#AAF0D1,#87CEEB,#FFC1CC);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .searchbar{flex:1;display:flex;align-items:center;gap:8px;}
+  .searchbar input{width:100%;max-width:480px;padding:8px 12px;border:1px solid #d1d5db;border-radius:999px;font-size:.95rem;box-shadow:0 2px 6px rgba(0,0,0,0.04);}
+  #switchPageBtn{padding:8px 12px;border-radius:8px;border:none;background:#87CEEB;color:#fff;font-weight:700;cursor:pointer;}
+  #refreshBtn{padding:8px 10px;border-radius:8px;border:none;background:#0b84ff;color:#fff;cursor:pointer;}
+  #exportPdfBtn{padding:8px 10px;border-radius:8px;border:none;background:#10b981;color:#fff;cursor:pointer;}
+
+  /* indicators & pages */
+  .page-indicators{display:flex;justify-content:center;gap:8px;padding:8px 0;background:#f9fafc;}
+  .dot{width:10px;height:10px;background:#c9c9c9;border-radius:50%;transition:transform .2s,background .2s;}
+  .dot.active{background:#87CEEB;transform:scale(1.2);}
+  .pages-wrapper{display:flex;width:200%;transition:transform .35s ease-in-out;touch-action:pan-y;}
+  .page{width:100%;min-height:calc(100vh - 90px);overflow:auto;position:relative;padding-bottom:40px;}
+  .container{display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1rem 1.25rem;}
+
+  .card{background:#fff;padding:1rem;border-radius:12px;box-shadow:0 6px 18px rgba(15,23,42,0.06);}
+  h2{margin:0 0 .5rem;font-size:1.1rem;}
+  h3{margin:.6rem 0;font-size:1rem;color:#374151;}
+  ul{list-style:none;padding:0;margin:0;}
+  li{background:#f3f4f6;margin:.4rem 0;padding:.6rem;border-radius:8px;display:flex;justify-content:space-between;align-items:center;font-size:.9rem;gap:8px;}
+  .li-actions{display:flex;gap:6px;align-items:center;}
+
+  .approve{background:#4caf50;color:white;border:none;padding:6px 10px;border-radius:8px;cursor:pointer;}
+  .deny{background:#e53935;color:white;border:none;padding:6px 10px;border-radius:8px;cursor:pointer;}
+  .request{background:#2196F3;color:white;border:none;padding:6px 10px;border-radius:8px;cursor:pointer;}
+  .review-btn{background:#0b84ff;color:#fff;border:none;padding:6px 10px;border-radius:8px;cursor:pointer;}
+
+  .emails{display:flex;flex-wrap:wrap;gap:6px;}
+  .email-slot{background:#eef2ff;padding:4px 8px;border-radius:6px;font-size:.8rem;}
+
+  /* summary page */
+  .summary-container{padding:1rem 1.25rem;}
+  .summary-card{background:#fff;padding:1rem;border-radius:12px;box-shadow:0 6px 18px rgba(15,23,42,0.06);margin-top:1rem;}
+  .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+  /* modal */
+  .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);justify-content:center;align-items:center;z-index:9999;}
+  .modal{background:#fff;padding:18px;border-radius:12px;width:94%;max-width:980px;max-height:86%;overflow:auto;box-shadow:0 8px 40px rgba(2,6,23,0.2);}
+  .modal h2{margin-top:0;}
+  .modal-actions{display:flex;gap:8px;justify-content:flex-start;margin-top:12px;}
+  .small{font-size:.9rem;padding:8px 10px;border-radius:8px;border:none;cursor:pointer;}
+  .badge{padding:4px 8px;border-radius:8px;font-weight:700;font-size:.8rem;}
+
+  /* print styles */
+  @media print {
+    header, .page-indicators, #switchPageBtn, #switchPageBtn, #refreshBtn, #exportPdfBtn, .li-actions, .searchbar input { display:none !important; }
+    body{background:#fff;color:#111;}
+    .pages-wrapper{width:100% !important;transform:translateX(-50%) !important;}
+    .page{padding:0;margin:0;}
+    .summary-card, .card{box-shadow:none;border-radius:0;}
+  }
+/* -----------------------------
+   Sidebar
+   ----------------------------- */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -250px;
+  width: 250px;
+  height: 100%;
+  background
+        radial-gradient(1200px 1200px at -10% -20%, var(--lav) 0%, transparent 45%),
+        radial-gradient(1000px 1000px at 120% -10%, var(--pink) 0%, transparent 40%),
+        radial-gradient(800px 800px at 50% 120%, var(--mint) 0%, transparent 55%),
+        var(--bg);
+  
+ box-shadow:2px 0 15px rgba(0,0,0,0.05);
+  border-right: 1px solid color-mix(in oklab, var(--lav) 60%, #e5e7eb);
+  transition: left 0.3s ease;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  justify-content:space-between;
+  padding:20px;
+  backdrop-filter:blur(6px);
+}
+body.sidebar-open #sidebarToggle {
+  display: none;
+}
+
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid color-mix(in oklab, var(--lav) 60%, #e5e7eb);
+}
+
+.sidebar-header h2 { margin: 0; font-size: 20px; }
+.sidebar-header button { font-size: 24px; background: transparent; border: none; cursor:pointer; }
+
+.sidebar-menu { list-style: none; padding:0; margin:0; flex:1; }
+.sidebar-menu li a { display:block; padding:12px 16px; text-decoration:none; color: var(--ink); font-weight:600; border-radius:8px; margin:4px 8px; transition: background 0.2s; }
+.sidebar-menu li a:hover { background: var(--mint); color: #063449; }
+/* PROFILE */
+.profile {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:20px;
+}
+
+.profile .avatar {
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  background:linear-gradient(to bottom right,var(--pink),var(--lav));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+  color:var(--ink);
+}
+
+.profile .info {
+  line-height:1.2;
+}
+
+.profile .info .name {
+  font-weight:600;
+}
+
+.profile .info .email {
+  font-size:12px;
+  color:var(--muted);
+}
+
+/* NAVIGATION */
+nav {
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.nav-btn {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 12px;
+  border:none;
+  background:none;
+  width:100%;
+  border-radius:10px;
+  text-align:left;
+  font-size:15px;
+  color:var(--ink);
+  cursor:pointer;
+  transition:background 0.2s;
+}
+
+.nav-btn:hover {
+  background:color-mix(in srgb,var(--sky) 40%,white);
+}
+
+.nav-btn .notif {
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:red;
+  margin-left:auto;
+  animation:pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+  from {opacity:0.5;}
+  to {opacity:1;}
+}
+
+/* PREMIUM SECTION */
+.premium {
+  border-top:1px solid var(--lav);
+  margin-top:10px;
+  padding-top:10px;
+}
+
+.premium .nav-btn {
+  color:#b8860b;
+  font-weight:600;
+}
+
+.premium .nav-btn:hover {
+  background:color-mix(in srgb,var(--mint) 40%,white);
+}
+
+/* LOGOUT */
+.logout {
+  border-top:1px solid var(--lav);
+  padding-top:10px;
+}
+
+.logout-btn {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 12px;
+  border:none;
+  background:none;
+  color:var(--ink);
+  border-radius:10px;
+  cursor:pointer;
+  width:100%;
+  transition:background 0.2s;
+}
+
+.logout-btn:hover {
+  background:color-mix(in srgb,var(--pink) 40%,white);
+}
+
+/* Overlay for mobile */
+.overlay { position: fixed; inset:0; background: rgba(0,0,0,0.3); display:none; z-index: 90; }
+
+/* Toggle button */
+.sidebar-toggle { position: fixed; top:16px; left:16px; font-size:28px; border:none; background: var(--mint); color:#063449; padding:8px 12px; border-radius:8px; cursor:pointer; z-index:110; }
+
+body.sidebar-open #mainContent {
+  margin-left: 250px;
+  transition: margin-left 0.3s ease;
+}
+
+/* Responsive */
+@media (max-width: 768px){
+  body.sidebar-open .container { margin-left:0; }
+  .overlay { display:block; }
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar">
+  <div class="sidebar-header">
+   
+  
+  <!-- PROFILE -->
+    <div class="profile">
+      <div class="avatar">IK</div>
+      <div class="info">
+        <div class="name">Ibrahim</div>
+        <div class="email">ibrahim@email.com</div>
+     
+ </div>
+<button id="closeSidebarBtn">&times;</button>
+   </div>
+ </div>
+    <!-- NAVIGATION -->
+    <nav>
+      <button class="nav-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+        Dashboard
+      </button>
+
+      <button class="nav-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><path d="M14 4h7"/><path d="M14 9h7"/><path d="M14 15h7"/><path d="M14 20h7"/></svg>
+        Listings
+        <span class="notif"></span>
+      </button>
+       
+      <button class="nav-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-hand-coins-icon lucide-hand-coins"><path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"/><path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/><path d="m2 16 6 6"/><circle cx="16" cy="9" r="2.9"/><circle cx="6" cy="5" r="3"/></svg>
+        Finance
+      </button>
+
+      <button class="nav-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12h-5"/><path d="M15 8h-5"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg>
+        Contracts
+      </button>
+
+      <button class="nav-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>
+        Notifications
+        <span class="notif"></span>
+      </button>
+
+      <button class="nav-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 10.27 7 3.34"/><path d="m11 13.73-4 6.93"/><path d="M12 22v-2"/><path d="M12 2v2"/><path d="M14 12h8"/><path d="m17 20.66-1-1.73"/><path d="m17 3.34-1 1.73"/><path d="M2 12h2"/><path d="m20.66 17-1.73-1"/><path d="m20.66 7-1.73 1"/><path d="m3.34 17 1.73-1"/><path d="m3.34 7 1.73 1"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="12" r="8"/></svg>
+        Settings
+      </button>
+
+      <button class="nav-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+        Help
+      </button>
+
+      <button class="nav-btn">
+        <svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4'/><polyline points='16 17 21 12 16 7'/><line x1='21' y1='12' x2='9' y2='12'/></svg>
+        Admin
+      </button>
+    </nav>
+
+    <!-- PREMIUM -->
+    <div class="premium">
+      <button class="nav-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+        Appeal
+      </button>
+
+      <button class="nav-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/><path d="m7.9 7.9 2.7 2.7"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/><path d="m13.4 10.6 2.7-2.7"/><circle cx="7.5" cy="16.5" r=".5" fill="currentColor"/><path d="m7.9 16.1 2.7-2.7"/><circle cx="16.5" cy="16.5" r=".5" fill="currentColor"/><path d="m13.4 13.4 2.7 2.7"/><circle cx="12" cy="12" r="2"/></svg>
+        Vault
+      </button>
+    </div>
+ 
+
+  <!-- LOGOUT -->
+  <div class="logout">
+    <button class="logout-btn">
+      <svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m16 17 5-5-5-5'/><path d='M21 12H9'/><path d='M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4'/></svg>
+      Logout
+    </button>
+  </div>
+</div>
+ </div>
+
+<!-- Overlay -->
+<div id="overlay" class="overlay"></div>
+
+<!-- Sidebar toggle -->
+<button id="sidebarToggle" class="sidebar-toggle">&#9776;</button>
+
+<div id="mainContent">
+<header>
+  <div class="logo"><svg width="36" height="36" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="45" fill="none" stroke="#E6E6FA" stroke-width="6"/><path d="M20 30 Q50 60 80 30" stroke="#87CEEB" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M20 70 Q50 40 80 70" stroke="#AAF0D1" stroke-width="6" fill="none" stroke-linecap="round"/></svg><div class="logo-text">Console<span>X</span></div></div>
+
+  <div class="searchbar">
+    <input id="searchInput" placeholder="Search user / contract / payment (press Enter)..." />
+  </div>
+
+  <button id="refreshBtn" title="Refresh live data">🔄 Refresh</button>
+  <button id="switchPageBtn" title="Toggle summary">View Summary →</button>
+  <button id="exportPdfBtn" title="Export current view to PDF">Export PDF</button>
+</header>
+
+<div class="page-indicators" aria-hidden="true"><span class="dot active"></span><span class="dot"></span></div>
+
+<div class="pages-wrapper">
+
+  <!-- PAGE 1 -->
+  <div class="page" id="page1">
+    <div class="container" id="dashboardContent">
+      <div class="card">
+        <h2>Payments</h2>
+        <h3>Withdrawal Requests</h3>
+        <ul id="withdrawals"></ul>
+        <h3>Listing Payments</h3>
+        <ul id="listings"></ul>
+        <h3>Subscriptions Due</h3>
+        <ul id="subscriptions"></ul>
+      </div>
+
+      <div class="card">
+        <h2>Contracts</h2>
+        <h3>Finalization Requests</h3>
+        <ul id="finalizations"></ul>
+        <h3>Active Contracts</h3>
+        <ul id="activeContracts"></ul>
+        <h3>Termination Requests</h3>
+        <ul id="terminations"></ul>
+      </div>
+      
+        <!-- 1️⃣ Listing Requests -->
+<div class="card">
+  <h2>Listing Requests</h2>
+  <ul id="listingRequests"></ul>
+</div>
+
+<!-- 2️⃣ Verification Review -->
+<div class="card">
+  <h2>Verification Requests</h2>
+  <ul id="verificationRequests"></ul>
+</div>
+
+<!-- 3️⃣ Appeal Section -->
+<div class="card">
+  <h2>Appeals</h2>
+  <ul id="appeals"></ul>
+</div>
+
+<!-- 4️⃣ Take Down Issues -->
+<div class="card">
+  <h2>Take Down Issues</h2>
+  <ul id="takeDownIssues"></ul>
+  <button id="addTakeDownBtn" class="small review-btn" style="margin-top:8px;">Add Issue</button>
+  <div id="takeDownForm" style="display:none;margin-top:8px;">
+    <input id="tdAppId" placeholder="App ID" style="padding:4px 8px;margin:4px 0;" /><br>
+    <input id="tdAppName" placeholder="App Name" style="padding:4px 8px;margin:4px 0;" /><br>
+    <input id="tdAppUrl" placeholder="App URL" style="padding:4px 8px;margin:4px 0;" /><br>
+    <button id="sendTakeDown" class="small approve">Send</button>
+  </div>
+</div>
+
+<!-- 5️⃣ Notification Section -->
+<div class="card">
+  <h2>Create Notification</h2>
+  <button id="createNotifBtn" class="small review-btn">Create</button>
+  <div id="notifForm" style="display:none;margin-top:8px;">
+    <select id="notifType">
+      <option value="system">System</option>
+      <option value="individual">Individual</option>
+    </select><br>
+    <input id="notifUserId" placeholder="User ID (for individual)" style="display:none;padding:4px 8px;margin:4px 0;" /><br>
+    <textarea id="notifText" placeholder="Message" style="width:100%;padding:6px;"></textarea><br>
+    <button id="sendNotif" class="small approve">Send</button>
+  </div>
+</div>
+
+
+      <div class="card" style="grid-column: span 2;">
+        <h2>Reports</h2>
+        <h3>Financial</h3>
+        <ul id="reportFinancial"></ul>
+        <h3>System</h3>
+        <ul id="reportSystem"></ul>
+        <h3>User</h3>
+        <ul id="reportUser"></ul>
+        <h3>Listing</h3>
+        <ul id="reportListing"></ul>
+        <h3>Feedback</h3>
+        <ul id="reportFeedback"></ul>
+      </div>
+
+      <div class="card" style="grid-column: span 2;">
+        <h2>Extension Monitoring</h2>
+        <h3>Installation Status</h3>
+        <ul id="installStatus"></ul>
+        <h3>Linked Accounts</h3>
+        <ul id="extensionAccounts"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 2 -->
+  <div class="page" id="page2">
+    <div class="summary-container">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h2>User / Console Summary</h2>
+        <div>
+          <button id="printSummaryBtn" class="small" title="Print (opens print dialog)">Print</button>
+          <button id="exportSummaryPdfBtn" class="small" title="Export summary to PDF">Export PDF</button>
+        </div>
+      </div>
+
+      <div class="summary-card" id="summaryCard">
+        <p>Select a user to view details.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-hidden="true">
+  <div class="modal" role="document">
+    <h2 id="modalTitle">Review</h2>
+    <div id="modalInner">Loading...</div>
+    <div class="modal-actions">
+      <button id="modalApprove" class="small approve">Approve</button>
+      <button id="modalDeny" class="small deny">Deny</button>
+      <button id="modalClose" class="small" style="background:#e5e7eb;color:#111;">Close</button>
+    </div>
+  </div>
+</div>
+</div>
+<script src="../js/admin.js"></script>
+</body>
+</html>

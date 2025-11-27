@@ -1,0 +1,168 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ConsoleX Legal Review Desk</title>
+
+<style>
+  body{
+    margin:0;
+    font-family: 'Georgia', serif;
+    background:#f3f5f7;
+    color:#1e2732;
+  }
+
+  header{
+    background:#0c1b33;
+    color:#fff;
+    padding:1rem 1.5rem;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border-bottom:4px solid #d4af37;
+    position:sticky;top:0;z-index:10;
+  }
+
+  .brand{
+    font-size:22px;
+    font-weight:700;
+    letter-spacing:.5px;
+  }
+
+  .brand span{
+    color:#d4af37;
+  }
+
+  #printBtn{
+    background:#d4af37;
+    color:#0c1b33;
+    border:none;
+    padding:.5rem 1rem;
+    border-radius:6px;
+    font-weight:bold;
+    cursor:pointer;
+  }
+
+  .layout{
+    display:grid;
+    grid-template-columns:1.2fr 1fr;
+    gap:1rem;
+    padding:1.5rem;
+  }
+
+  .card{
+    background:#ffffff;
+    border-radius:10px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.08);
+    padding:1.2rem;
+    border-top:4px solid #d4af37;
+  }
+
+  h2{
+    margin-top:0;
+    font-family:'Georgia', serif;
+    font-size:1.3rem;
+  }
+
+  ul{
+    padding:0;
+    list-style:none;
+  }
+
+  li{
+    background:#eef1f4;
+    margin:.5rem 0;
+    padding:.75rem;
+    border-radius:8px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border:1px solid #d7dce1;
+    font-family:'Arial', sans-serif;
+  }
+
+  button{
+    border:none;
+    border-radius:6px;
+    padding:6px 10px;
+    cursor:pointer;
+    font-weight:600;
+  }
+
+  .review-btn{background:#0c1b33;color:#fff;}
+  .email-btn{background:#198754;color:#fff;}
+
+  #reviewModal,#emailModal{
+    display:none;position:fixed;inset:0;backdrop-filter:blur(4px);
+    background:rgba(0,0,0,0.4);justify-content:center;align-items:center;
+  }
+
+  .modal{
+    background:#ffffff;
+    padding:1.5rem;
+    border-radius:12px;
+    width:90%;max-width:800px;
+    box-shadow:0 6px 30px rgba(0,0,0,.3);
+  }
+
+  #emailBody{
+    width:100%;
+    height:180px;
+    border-radius:8px;
+    padding:10px;
+    border:1px solid #c1c7cf;
+    font-family:'Arial',sans-serif;
+  }
+
+  @media print{
+    header,button{display:none!important;}
+    body{background:#fff;}
+    .card{box-shadow:none;}
+  }
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">Console<span>X</span> Legal Desk</div>
+  <button id="printBtn">Print / Export</button>
+</header>
+
+<div class="layout">
+  <div class="card">
+    <h2>Appeals Requiring Legal Review</h2>
+    <ul id="appealsList"></ul>
+  </div>
+
+  <div class="card">
+    <h2>Case Log / Review Summary</h2>
+    <div id="summaryCard">No items reviewed yet.</div>
+  </div>
+</div>
+
+<div id="reviewModal">
+  <div class="modal">
+    <h2>Case Review</h2>
+    <div id="reviewContent">Loading...</div>
+    <br>
+    <button class="email-btn" id="composeEmailBtn">Compose Official Email</button>
+    <button onclick="closeReview()">Close</button>
+  </div>
+</div>
+
+<div id="emailModal">
+  <div class="modal">
+    <h2>Compose Legal Notice</h2>
+    <textarea id="emailBody"></textarea>
+    <br><br>
+    <button class="email-btn" onclick="sendEmail()">Send & Record</button>
+    <button onclick="closeEmail()">Cancel</button>
+  </div>
+</div>
+
+<script src="../js/jegal.js></script>
+</body>
+</html>
