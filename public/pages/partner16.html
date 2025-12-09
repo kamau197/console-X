@@ -46,6 +46,12 @@ hr{border:0;border-top:1px solid #e0e0e0;margin:8px 0}
 <div class="row">
   <div><label>Party A User ID</label><input id="userId" type="text" /></div>
   <div><label>Party B User ID</label><input id="partyBId" type="text" required /></div>
+</div><div class="row">
+  <div style="flex:1">
+    <label>Party B Email (Auto-Fetched)</label>
+    <input id="partyBEmail" type="text" readonly placeholder="Will auto-detect..." />
+    <div class="small" id="emailVerificationStatus" style="color:#6b7280;font-size:12px;"></div>
+  </div>
 </div>
 <div class="row">
   <div><label>Start Date</label><input id="startDate" type="date" /></div>
@@ -122,4 +128,5 @@ hr{border:0;border-top:1px solid #e0e0e0;margin:8px 0}
 
 </body>
 </html>
+
 
