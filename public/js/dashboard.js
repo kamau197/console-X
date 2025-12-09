@@ -1,4 +1,5 @@
-/* -----------------------------
+<script>
+   /* -----------------------------
    Sidebar JS (Refined)
 ----------------------------- */
 const sidebar = document.getElementById("sidebar");
@@ -102,7 +103,27 @@ function initpage1() {
  if (page1Initialzed) return;//prevents multiple set up
      page1Initialzed = true;
       console.log("Page 1 initialized");
- }
+}
+    
+fetch("/api/me")  // change URL to your real endpoint
+  .then(res => res.json())
+  .then(user => {
+      // 1. Populate greeting
+      const time = new Date().getHours();
+      const greeting = time < 12 ? "Good morning" 
+              : time < 17 ? "Good afternoon" 
+              : "Good evening";
+
+      document.getElementById("welcomeTitle").innerText =
+        `${greeting}, ${user.name}`;
+
+      // 2. Populate avatar initials dynamically
+      const initials = user.name?.split(" ").map(w => w[0]).join("").toUpperCase();
+      document.getElementById("userAvatar").innerText = initials;
+  })
+  .catch(err => {
+    console.error("Failed to load user info:", err);
+  });
       /* ---------- Data (demo) ---------- */
   const contracts = [
     {id:1, tab:'active', title:'Build and design a SaaS landing page', by:'Alexander Heifner', status:'Active contract', statusColor:'var(--mint)', next:'Payment requested on Jul 18', cta:'Review & pay'},
@@ -243,7 +264,8 @@ function initpage1() {
         toast('Milestone approved and paid 💸');
       }
       if(target.id === 'postJobBtn'){
-        toast('Job post wizard opening…');
+        HERE
+           t('Job post wizard opening…');
       }
       if(target.id === 'refreshAgain'){
         toast('Recommendations refreshed ♻️');
@@ -325,4 +347,6 @@ function initPage2() {
     const el = document.getElementById(id);
     if (el) chartConfig(el,t,l,d,c);
   });
+
 }
+</script>
