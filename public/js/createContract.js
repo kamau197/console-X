@@ -1,3 +1,5 @@
+// Generate unique contract ID globally once
+const generatedContractId = "CX-" + Math.floor(Math.random() * 1000000000);
 const qs = s => document.querySelector(s);
 const milestoneList = qs('#milestoneList');
 const contractTypeSelect = qs('#contractType');
@@ -147,8 +149,11 @@ function renderPreview(){
     ? '<ol>'+ms.map(m=>`<li><strong>${m.title}</strong> <input type='checkbox' ${m.done?'checked':''} disabled></li>`).join('')+'</ol>'
     : '<i>No milestones defined.</i>';
 
-  qs('#previewContent').innerHTML=`
+const contractIdHtml = `<strong>Contract ID:</strong> ${generatedContractId}<br><br>`;
+
+qs('#previewContent').innerHTML=`
   <h2 style="margin-top:0">Agreement between ${A} and ${B}</h2>
+  ${contractIdHtml}
   <div class="small">Party A ID: ${idA} | Party B ID: ${idB}</div>
   <div class="small">Contract Type: ${type}</div>
   <hr>
@@ -205,5 +210,6 @@ downloadBtn.addEventListener('click',()=>{
   a.href=u;a.download='ContractPreview.html';a.click();
   URL.revokeObjectURL(u);
 });
+
 
 renderPreview();
