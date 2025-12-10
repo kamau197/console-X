@@ -462,5 +462,36 @@ downloadBtn.addEventListener('click',()=>{
 });
 
 
+
 renderPreview();
+
+document.addEventListener("click", async e => {
+  if (!e.target.classList.contains("sendLinkBtn")) return;
+
+  let amount = upfrontInput.value;
+  let contractId = generatedContractId;
+  let emailReceiver = partyBEmailField.value;
+
+  let url =
+    `https://consolex.example.com/pay?contractId=${contractId}&amount=${amount}&role=B`;
+
+  //  SEND TO SERVER
+  await fetch('/api/send-payment-link', {
+    method: 'POST',
+    body: JSON.stringify({ link: url, email: emailReceiver }),
+    headers: { "Content-Type": "application/json" }
+  });
+
+  alert("Payment link sent to: " + emailReceiver);
+});
+
+document.addEventListener("click", e => {
+  if (!e.target.classList.contains("makePaymentBtn")) return;
+
+  let amount = upfrontInput.value;
+  let contractId = generatedContractId;
+
+  openPaymentModal(amount, contractId);
+});
+
 
