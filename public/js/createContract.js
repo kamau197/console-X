@@ -1,6 +1,43 @@
-// Generate unique contract ID globally once
+// =================== CONTRACT ID ===================
 const generatedContractId = "CX-" + Math.floor(Math.random() * 1000000000);
+
+// =================== DEFAULTS ===================
+const DEFAULT_CONTRACT_NAME = "Revenue Settlement";
+let milestoneSeq = 0;
+
+// =================== HELPERS ===================
 const qs = s => document.querySelector(s);
+
+function generateMilestoneId() {
+  milestoneSeq++;
+  return `MS-${generatedContractId}-${milestoneSeq}`;
+}
+
+function parseNum(v) {
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function monthsBetween(s, e) {
+  if (!s || !e) return 1;
+  const d1 = new Date(s), d2 = new Date(e);
+  let m = (d2.getFullYear() - d1.getFullYear()) * 12 + (d2.getMonth() - d1.getMonth());
+  m += (d2.getDate() >= d1.getDate()) ? 1 : 0;
+  return Math.max(1, m);
+}
+
+function sanitizeNumberInput(i) {
+  const v = parseFloat(i.value);
+  if (Number.isFinite(v) && v >= 0) i.value = v;
+  else if (i.value !== '') i.value = '';
+}
+
+function recalcUpfront() {
+  const up = parseNum(publishingFeeInput.value) + (parseNum(rentalFeeInput.value) / 2);
+  upfrontInput.value = up.toFixed(2);
+}
+
+// =================== DOM REFERENCES ===================
 const milestoneList = qs('#milestoneList');
 const contractTypeSelect = qs('#contractType');
 const publishingFeeInput = qs('#publishingFee');
@@ -14,27 +51,189 @@ const upfrontInput = qs('#upfrontAmount');
 const finalizeBtn = qs('#finalizeBtn');
 const downloadBtn = qs('#downloadPreview');
 
-// NEW auto email & app id field refs
 const partyAEmailField = qs('#partyAEmail');
 const partyBEmailField = qs('#partyBEmail');
-const appIdField = qs('#appId'); // <-- NEW
+const appIdField = qs('#appId');
+const contractNameInput = qs('#contractName');
 
-let milestoneCount = 0;
+// =================== AUTO DEFAULT NAME ===================
+if (contractNameInput && !contractNameInput.value) {
+  contractNameInput.value = DEFAULT_CONTRACT_NAME;
+}
 
-// ---------- NEW LOGIC STARTS HERE -----------
-
-// Fake DB lookup simulation
+// =================== EMAIL MOCK ===================
 async function fetchUserEmailById(userId) {
   if (!userId) return "";
   return "account-" + userId + "@example.com";
 }
 
 async function autofillEmails() {
-  const userAId = qs('#userId').value;
-  const userBId = qs('#partyBId').value;
+  partyAEmailField.value = await fetchUserEmailById(qs('#userId').value);
+  partyBEmailField.value = await fetchUserEmailById(qs('#partyBId').value);
+}
 
-  partyAEmailField.value = await fetchUserEmailById(userAId);
-  partyBEmailField.value = await fetchUserEmailById(userBId);
+// =================== MILESTONE ORDERING ===================
+function ensureCompleteAtBottom() {
+  const items = [...milestoneList.querySelectorAll('.ms-item')];
+  const complete = items.find(i =>
+    (i.querySelector('.ms-title')?.value || '').toLowerCase().includes('complete contract')
+  );
+  if (complete) milestoneList.appendChild(complete);
+}
+
+// =================== ADD MILESTONE ===================
+function addMilestone({ title = 'New milestone', extra = '', locked = false } = {}) {
+  const milestoneId = generateMilestoneId();
+
+  const div = document.createElement('div');
+  div.className = 'ms-item' + (locked ? ' locked' : '');
+  div.dataset.milestoneId = milestoneId;
+
+  div.innerHTML = `
+    <div>
+      <div class="small" style="opacity:.6">Milestone ID: ${milestoneId}</div>
+      <input type="text" class="ms-title" value="${title}" ${locked ? 'readonly' : ''}>
+      ${extra}
+    </div>
+    <div></div>
+    <div style="text-align:center">
+      <input type="checkbox" class="ms-done" ${locked ? 'disabled' : ''}>
+    </div>
+  `;
+
+  milestoneList.appendChild(div);
+  ensureCompleteAtBottom();
+  renderPreview();
+}
+
+// =================== REVENUE MILESTONES ===================
+function monthsToRevenueMilestones() {
+  const m = monthsBetween(startDate.value, endDate.value);
+  let mult = 0, type = '';
+  if (escrowAccount.checked) { mult = 1; type = 'Escrow Account'; }
+  else if (escrowLedger.checked) { mult = 4; type = 'Escrow Ledger'; }
+
+  return Array.from({ length: m * mult }, (_, i) => ({
+    title: `Revenue Release ${i + 1}`,
+    type
+  }));
+}
+
+// =================== BASE MILESTONES ===================
+function addBaseMilestones(type) {
+  milestoneList.innerHTML = '';
+  milestoneSeq = 0;
+
+  const rev = monthsToRevenueMilestones();
+
+  if (type === 'GA') {
+    addMilestone({ title: 'Party B makes upfront payment', locked: true });
+    addMilestone({
+      title: 'Grant access milestone',
+      extra: `<div>Email: <strong>${partyAEmailField.value}</strong></div>
+              <div>App ID: <strong>${appIdField.value || 'N/A'}</strong></div>`,
+      locked: true
+    });
+    addMilestone({ title: 'App is live', locked: true });
+  }
+
+  if (type === 'SA') {
+    addMilestone({ title: 'Pay upfront milestone', locked: true });
+    addMilestone({ title: 'Party B uploads APK', locked: true });
+    addMilestone({ title: 'App is live', locked: true });
+  }
+
+  if (type === 'TA') {
+    addMilestone({ title: 'Party B uploads transfer asset', locked: true });
+    addMilestone({ title: 'App is live', locked: true });
+  }
+
+  rev.forEach(r =>
+    addMilestone({ title: r.title, extra: `<div class="small">${r.type}</div>`, locked: true })
+  );
+
+  addMilestone({ title: 'Complete contract milestone', locked: true });
+}
+
+// =================== GATHER MILESTONES ===================
+function gatherMilestones() {
+  return [...milestoneList.querySelectorAll('.ms-item')].map(n => ({
+    id: n.dataset.milestoneId,
+    title: n.querySelector('.ms-title')?.value || '',
+    done: n.querySelector('.ms-done')?.checked || false
+  }));
+}
+
+// =================== PREVIEW ===================
+function renderPreview() {
+  const A = qs('#partyA').value || '[Party A]';
+  const B = qs('#partyB').value || '[Party B]';
+  const contractName = contractNameInput?.value || DEFAULT_CONTRACT_NAME;
+
+  const ms = gatherMilestones();
+  const msHtml = ms.length
+    ? '<ol>' + ms.map(m => `<li><strong>${m.title}</strong> <span class="small">(${m.id})</span></li>`).join('') + '</ol>'
+    : '<i>No milestones defined.</i>';
+
+  qs('#previewContent').innerHTML = `
+    <h2>${contractName}</h2>
+    <div class="small">Agreement between ${A} and ${B}</div>
+    <strong>Contract ID:</strong> ${generatedContractId}<br>
+    <strong>App ID:</strong> ${appIdField.value || 'N/A'}
+    <hr>
+    <strong>Milestones</strong>
+    ${msHtml}
+  `;
+}
+
+// =================== EVENTS ===================
+contractTypeSelect.addEventListener('change', () =>
+  addBaseMilestones(contractTypeSelect.value)
+);
+
+[publishingFeeInput, rentalFeeInput, rentalCommissionInput].forEach(i =>
+  i.addEventListener('input', () => {
+    sanitizeNumberInput(i);
+    recalcUpfront();
+    renderPreview();
+  })
+);
+
+[startDate, endDate, escrowAccount, escrowLedger].forEach(i =>
+  i.addEventListener('change', () => {
+    if (contractTypeSelect.value) addBaseMilestones(contractTypeSelect.value);
+    renderPreview();
+  })
+);
+
+qs('#addMilestone').addEventListener('click', () => addMilestone());
+qs('#clearMilestones').addEventListener('click', () => {
+  milestoneList.querySelectorAll('.ms-item').forEach(n => {
+    if (!n.classList.contains('locked')) n.remove();
+  });
+  ensureCompleteAtBottom();
+  renderPreview();
+});
+
+finalizeBtn.addEventListener('click', () => {
+  alert('Contract finalized and sealed!');
+  renderPreview();
+});
+
+downloadBtn.addEventListener('click', () => {
+  const c = qs('#previewContent').innerHTML;
+  const b = new Blob([`<html><body>${c}</body></html>`], { type: 'text/html' });
+  const u = URL.createObjectURL(b);
+  const a = document.createElement('a');
+  a.href = u;
+  a.download = 'ContractPreview.html';
+  a.click();
+  URL.revokeObjectURL(u);
+});
+
+// =================== INIT ===================
+autofillEmails();
+renderPreview();  partyBEmailField.value = await fetchUserEmailById(userBId);
 }
 
 // Fake "confirm identity" verification simulation
@@ -773,6 +972,7 @@ document.addEventListener("click", e => {
 
   openPaymentModal(amount, contractId);
 });
+
 
 
 
