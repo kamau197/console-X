@@ -1,4 +1,36 @@
+<!-- AUTH GUARD -->
+<script type="module">
+  import { supabase } from "/js/supabaseClient.js";
 
+  async function enforceAuth() {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      window.location.href = "/login.html";
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", session.user.id)
+      .single();
+
+    const allowedRoles = ["basic_user", "vendor", "admin", "legal"];
+
+    if (!profile || !allowedRoles.includes(profile.role)) {
+      window.location.href = "/unauthorized.html";
+      return;
+    }
+
+    window.currentUser = session.user;
+    window.currentRole = profile.role;
+  }
+
+  enforceAuth();
+</script>
+<script>
+   
 /* -----------------------------
    Sidebar JS (Refined)
 ----------------------------- */
@@ -127,4 +159,6 @@ document.getElementById('applyFilter').addEventListener('click', () => {
   renderPeople('#personalRow', filtered.slice(0, 6));
   toast('Filter applied ✅');
   filterModal.style.display = 'none';
+
 });
+</script>
