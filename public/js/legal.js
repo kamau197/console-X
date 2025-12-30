@@ -1,4 +1,36 @@
-let appeals = [
+<!-- AUTH GUARD -->
+<script type="module">
+  import { supabase } from "/js/supabaseClient.js";
+
+  async function enforceAuth() {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      window.location.href = "/login.html";
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", session.user.id)
+      .single();
+
+    const allowedRoles = ["admin", "legal"];
+
+    if (!profile || !allowedRoles.includes(profile.role)) {
+      window.location.href = "/unauthorized.html";
+      return;
+    }
+
+    window.currentUser = session.user;
+    window.currentRole = profile.role;
+  }
+
+  enforceAuth();
+</script>
+<script>
+  let appeals = [
   {appealId:"A-001", vaultId:"V-993", userId:"UA001", contractId:"C001", otherParty:"UA002", comment:"He mislabeled the device."},
   {appealId:"A-002", vaultId:"V-121", userId:"UA003", contractId:"C005", otherParty:"UA004", comment:"Payment dispute."}
 ];
@@ -72,4 +104,6 @@ function updateSummary(){
 document.getElementById("printBtn").onclick = ()=>window.print();
 
 renderAppeals();
+
 updateSummary();
+</script>
